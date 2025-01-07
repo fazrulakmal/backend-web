@@ -5,11 +5,15 @@ from models import db
 from config import Config
 from flask_cors import CORS
 
+from routes.PelangganRoute import dataPelanggan_blueprint
+
 app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
 db.init_app(app)
 # jwt = JWTManager(app)
+
+app.register_blueprint(dataPelanggan_blueprint, url_prefix='/api/datapelanggan')
 
 
 with app.app_context():
