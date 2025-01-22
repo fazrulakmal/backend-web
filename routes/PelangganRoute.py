@@ -110,6 +110,7 @@ def get_customer(id):
 # Read (Fetch all customers)
 
 @dataPelanggan_blueprint.route('/kmeans_clustering', methods=['GET'])
+@cross_origin()
 def calculate_kmeans():
     # Fetch data from the database
     customers = Pelanggan.query.all()
@@ -117,6 +118,7 @@ def calculate_kmeans():
     # Prepare the data for clustering
     customers_list = [
         {
+            'nama_penginapan': c.nama_penginapan,
             'jumlah_pengguna': c.jumlah_pengguna,
             'penggunaan_data_per_bulan': c.penggunaan_data_per_bulan,
             'penghasilan_per_bulan': c.penghasilan_per_bulan
@@ -143,8 +145,8 @@ def calculate_kmeans():
 
     # Centroid awal (cluster 1 dan cluster 2)
     initial_centroids = np.array([
-        [15, 1000, 6000000],  # Cluster 1
-        [40, 2000, 10000000]  # Cluster 2
+        [15, 1000, 12000000],  # Cluster IndiBiz
+        [40, 3000, 6000000]  # Cluster IndiHome
     ])
 
     # Ensure centroids have the same dimension as data
@@ -155,12 +157,26 @@ def calculate_kmeans():
     kmeans = KMeans(n_clusters=2, init=initial_centroids, n_init=1, random_state=0)
     kmeans.fit(data)
 
+    # Map cluster numbers to labels
+    cluster_labels = [ 'IndiBiz' if label == 0 else 'IndiHome' for label in kmeans.labels_ ]
+
+    # Combine cluster results with customer names
+    clustered_customers = [
+        {
+            'nama_penginapan': customers_list[i]['nama_penginapan'],
+            'jumlah_pengguna': customers_list[i]['jumlah_pengguna'],
+            'penggunaan_data_per_bulan': customers_list[i]['penggunaan_data_per_bulan'],
+            'penghasilan_per_bulan': customers_list[i]['penghasilan_per_bulan'],
+            'cluster': cluster_labels[i]
+        }
+        for i in range(len(customers_list))
+    ]
+
     # Prepare the result
     result = {
         "Initial_Centroids": initial_centroids.tolist(),
         "Final_Centroids": kmeans.cluster_centers_.tolist(),
-        "Clusters": kmeans.labels_.tolist()
+        "Clustered_Customers": clustered_customers
     }
 
     return jsonify(result), 200
-
